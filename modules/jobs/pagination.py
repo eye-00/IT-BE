@@ -5,6 +5,8 @@ class JobPagination:
 	default_page = 1
 	default_limit = 20
 	max_limit = 100
+	page_query_param = "page"
+	limit_query_param = "limit"
 
 	def parse(self, query_params):
 		page = self._parse_int(query_params.get("page"), "page", minimum=1, default=self.default_page)
@@ -21,6 +23,39 @@ class JobPagination:
 			"limit": limit,
 			"total": total,
 			"results": queryset[start:end],
+		}
+
+	def get_schema_operation_parameters(self, view):
+		return [
+			{
+				"name": self.page_query_param,
+				"required": False,
+				"in": "query",
+				"description": "1-based page number.",
+				"schema": {"type": "integer"},
+			},
+			{
+				"name": self.limit_query_param,
+				"required": False,
+				"in": "query",
+				"description": "Page size up to 100.",
+				"schema": {"type": "integer"},
+			},
+		]
+
+	def get_paginated_response_schema(self, schema):
+		return {
+			"type": "object",
+			"properties": {
+				"page": {"type": "integer"},
+				"limit": {"type": "integer"},
+				"total": {"type": "integer"},
+				"results": {
+					"type": "array",
+					"items": schema,
+				},
+			},
+			"required": ["page", "limit", "total", "results"],
 		}
 
 	@staticmethod
